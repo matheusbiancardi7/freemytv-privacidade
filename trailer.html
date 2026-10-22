@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Free My TV · trailer</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #player { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<!-- The Free My TV app on the TV plays trailers in a window that opens this page: YouTube plays embedded videos only
+     on pages with an address, and an installed TV app has none. The page tells the app how it went (postMessage). -->
+<div id="player"></div>
+<script>
+  var query = window.location.search;
+  var id = (/[?&]v=([\w-]{6,20})(?:&|$)/.exec(query) || [])[1];
+  var lang = (/[?&]hl=([a-z]{2})(?:&|$)/.exec(query) || [])[1] || 'pt';
+  var captions = /[?&]cc=1(?:&|$)/.test(query);
+
+  function tell(what) {
+    try { window.parent.postMessage('fmt-trailer:' + what, '*'); } catch (e) {}
+  }
+
+  function onYouTubeIframeAPIReady() {
+    if (!id) { tell('error'); return; }
+    new YT.Player('player', {
+      videoId: id,
+      playerVars: {autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0,
+        hl: lang, cc_lang_pref: lang, cc_load_policy: captions ? 1 : 0},
+      events: {
+        onReady: function (e) { tell('ready'); e.target.playVideo(); },
+        onStateChange: function (e) {
+          if (e.data === 1) tell('playing');
+          if (e.data === 0) tell('ended');
+        },
+        onError: function () { tell('error'); }
+      }
+    });
+  }
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
